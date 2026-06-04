@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplikasi CRUD Sederhana dengan Login</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 500px;
+        }
+        h2, h3 {
+            text-align: center;
+            color: #333;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="text"], input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #007bff;
+            border: none;
+            color: white;
+            font-size: 16px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .hidden {
+            display: none;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .btn-action {
+            padding: 5px 10px;
+            margin: 2px;
+            font-size: 12px;
+            width: auto;
+            display: inline-block;
+        }
+        .btn-edit { background-color: #ffc107; color: black; }
+        .btn-edit:hover { background-color: #e0a800; }
+        .btn-delete { background-color: #dc3545; color: white; }
+        .btn-delete:hover { background-color: #bd2130; }
+        .logout-btn {
+            background-color: #6c757d;
+            margin-top: 15px;
+        }
+        .logout-btn:hover { background-color: #5a6268; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="login-section">
+        <h2>Halaman Login</h2>
+        <div class="form-group">
+            <label for="username">Nama (Username):</label>
+            <input type="text" id="username" placeholder="Masukkan admin">
+        </div>
+        <div class="form-group">
+            <label for="password">Sandi (Password):</label>
+            <input type="password" id="password" placeholder="Masukkan admin">
+        </div>
+        <button onclick="login()">Masuk</button>
+        <p id="login-error" style="color: red; text-align: center; margin-top: 10px;"></p>
+    </div>
+
+    <div id="crud-section" class="hidden">
+        <h2>Dashboard CRUD</h2>
+        <p>Selamat datang, <strong>Admin</strong>!</p>
+        <hr>
+        
+        <h3>Form Input Data Barang</h3>
+        <input type="hidden" id="edit-index"> <div class="form-group">
+            <label for="item-name">Nama Barang:</label>
+            <input type="text" id="item-name" placeholder="Contoh: Laptop Asus">
+        </div>
+        <button id="btn-save" onclick="saveData()">Tambah Data</button>
+
+        <h3>Daftar Barang</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>No</th>
+                    <th>Nama Barang</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody id="data-table-body">
+                </tbody>
+        </table>
+
+        <button class="logout-btn" onclick="logout()">Keluar (Logout)</button>
+    </div>
+</div>
+
+<script>
+    // --- Sistem Login ---
+    function login() {
+        const userInp = document.getElementById('username').value;
+        const passInp = document.getElementById('password').value;
+        const errorMsg = document.getElementById('login-error');
+
+        // Validasi sesuai permintaan: Nama: admin, Sandi: admin
+        if (userInp === 'admin' && passInp === 'admin') {
+            errorMsg.innerText = "";
+            document.getElementById('login-section').classList.add('hidden');
+            document.getElementById('crud-section').classList.remove('hidden');
+            renderTable(); // Tampilkan data yang ada
+        } else {
+            errorMsg.innerText = "Nama atau Sandi salah!";
+        }
+    }
+
+    function logout() {
+        // Reset form login dan sembunyikan CRUD
+        document.getElementById('username').value = "";
+        document.getElementById('password').value = "";
+        document.getElementById('crud-section').classList.add('hidden');
+        document.getElementById('login-section').classList.remove('hidden');
+    }
+
+
+    // --- Sistem CRUD ---
+    // Mengambil data dari localStorage atau buat array baru jika masih kosong
+    let dataList = JSON.parse(localStorage.getItem('crudData')) || [];
+
+    function renderTable() {
+        const tableBody = document.getElementById('data-table-body');
+        tableBody.innerHTML = ""; // Kosongkan tabel sebelum diisi ulang
+
+        dataList.forEach((item, index) => {
+            const row = `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td>${item}</td>
+                    <td>
+                        <button class="btn-action btn-edit" onclick="editData(${index})">Edit</button>
+                        <button class="btn-action btn-delete" onclick="deleteData(${index})">Hapus</button>
+                    </td>
+                </tr>
+            `;
+            tableBody.innerHTML += row;
+        });
+    }
+
+    // Fungsi Create & Update
+    function saveData() {
+        const itemInput = document.getElementById('item-name');
+        const editIndex = document.getElementById('edit-index').value;
+        const value = itemInput.value.trim();
+
+        if (value === "") {
+            alert("Nama barang tidak boleh kosong!");
+            return;
+        }
+
+        if (editIndex === "") {
+            // Mode Tambah Baru (Create)
+            dataList.push(value);
+        } else {
+            // Mode Ubah Data (Update)
+            dataList[editIndex] = value;
+            document.getElementById('edit-index').value = ""; // Reset index edit
+            document.getElementById('btn-save').innerText = "Tambah Data";
+        }
+
+        // Simpan ke LocalStorage dan perbarui tampilan tabel
+        localStorage.setItem('crudData', JSON.stringify(dataList));
+        itemInput.value = "";
+        renderTable();
+    }
+
+    // Fungsi mengisi form untuk Edit (Update - langkah awal)
+    function editData(index) {
+        document.getElementById('item-name').value = dataList[index];
+        document.getElementById('edit-index').value = index;
+        document.getElementById('btn-save').innerText = "Simpan Perubahan";
+    }
+
+    // Fungsi Delete
+    function deleteData(index) {
+        if (confirm("Apakah Anda yakin ingin menghapus data ini?")) {
+            dataList.splice(index, 1); // Hapus data berdasarkan index
+            localStorage.setItem('crudData', JSON.stringify(dataList));
+            renderTable();
+            
+            // Batalkan mode edit jika data yang sedang diedit ternyata dihapus
+            document.getElementById('item-name').value = "";
+            document.getElementById('edit-index').value = "";
+            document.getElementById('btn-save').innerText = "Tambah Data";
+        }
+    }
+</script>
+
+</body>
+</html>
